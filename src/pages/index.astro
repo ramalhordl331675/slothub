@@ -1,0 +1,48 @@
+---
+import Layout from '../layouts/Base.astro';
+import SlotCard from '../components/SlotCard.astro';
+import { getAnonClient } from '../lib/supabase';
+
+export const prerender = false;
+
+const supabase = getAnonClient();
+const { data: links, error } = await supabase
+  .from('links_afiliados')
+  .select('*')
+  .eq('ativo', true)
+  .order('ordem', { ascending: true });
+
+if (error) {
+  console.error('Erro ao buscar links:', error.message);
+}
+---
+
+<Layout title="SlotHub — Melhores Cassinos & Slots">
+  <div class="container">
+    <header class="topbar">
+      <div class="logo"><span>🎰</span> SlotHub</div>
+      <a href="/admin" style="color:var(--muted);font-size:.9rem;">Área do Admin</a>
+    </header>
+
+    <section class="hero">
+      <h1>Os melhores cassinos & slots</h1>
+      <p>Escolha sua plataforma e jogue com os melhores bônus de boas-vindas.</p>
+    </section>
+
+    {
+      links && links.length > 0 ? (
+        <div class="grid">
+          {links.map((link) => (
+            <SlotCard link={link} />
+          ))}
+        </div>
+      ) : (
+        <p class="empty">Nenhum link disponível no momento. Volte em breve! 🎲</p>
+      )
+    }
+  </div>
+
+  <footer class="footer container">
+    SlotHub · Jogue com responsabilidade. +18
+  </footer>
+</Layout>

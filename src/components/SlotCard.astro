@@ -1,0 +1,41 @@
+---
+interface Props {
+  link: {
+    id: string;
+    nome_plataforma: string;
+    link_afiliado: string;
+    imagem_url: string | null;
+    descricao: string | null;
+    categoria: string | null;
+    cor_destaque: string;
+  };
+}
+const { link } = Astro.props;
+const cor = link.cor_destaque || '#00ff88';
+const inicial = (link.nome_plataforma || '?').charAt(0).toUpperCase();
+---
+
+<article class="card" style={`--accent:${cor}`}>
+  <div class="thumb">
+    {
+      link.imagem_url ? (
+        <img src={link.imagem_url} alt={link.nome_plataforma} loading="lazy" />
+      ) : (
+        <div class="placeholder">{inicial}</div>
+      )
+    }
+  </div>
+  <div class="body">
+    <span class="cat">{link.categoria || 'Cassino'}</span>
+    <h3>{link.nome_plataforma}</h3>
+    {link.descricao && <p class="desc">{link.descricao}</p>}
+    <a
+      class="btn"
+      href={link.link_afiliado}
+      target="_blank"
+      rel="noopener noreferrer sponsored"
+    >
+      🎰 Jogar Agora
+    </a>
+  </div>
+</article>

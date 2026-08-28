@@ -1,0 +1,178 @@
+---
+interface Props {
+  title?: string;
+}
+const { title = 'SlotHub — Cassinos & Slots' } = Astro.props;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content="Os melhores links de afiliados de cassinos e slots." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎰</text></svg>" />
+  </head>
+  <body>
+    <slot />
+
+    <style is:global>
+      :root {
+        --bg: #07070f;
+        --bg-2: #0f1020;
+        --card: #14152a;
+        --card-2: #1b1d36;
+        --text: #e8e9f3;
+        --muted: #9aa0c0;
+        --gold: #ffd34e;
+        --accent: #00ff88;
+        --danger: #ff4d6d;
+        --border: #ffffff14;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body { margin: 0; padding: 0; }
+
+      body {
+        font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+        background:
+          radial-gradient(1200px 600px at 50% -12%, #1c1248 0%, transparent 60%),
+          radial-gradient(900px 500px at 100% 0%, #07203a 0%, transparent 55%),
+          var(--bg);
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      a { color: inherit; text-decoration: none; }
+
+      .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+      .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 0;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 36px;
+      }
+
+      .logo {
+        font-weight: 900;
+        font-size: 1.6rem;
+        letter-spacing: 0.5px;
+        background: linear-gradient(90deg, var(--gold), var(--accent));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .logo span { font-size: 1.3rem; }
+
+      .hero { text-align: center; margin-bottom: 40px; }
+      .hero h1 {
+        font-size: clamp(1.8rem, 4vw, 3rem);
+        margin: 0 0 10px;
+        background: linear-gradient(90deg, #fff, var(--gold));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      .hero p { color: var(--muted); margin: 0; font-size: 1.05rem; }
+
+      /* ===== Grid de cards ===== */
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 22px;
+        padding-bottom: 60px;
+      }
+
+      .card {
+        --accent: #00ff88;
+        background: linear-gradient(180deg, var(--card), var(--card-2));
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+      }
+      .card:hover {
+        transform: translateY(-6px);
+        border-color: var(--accent);
+        box-shadow: 0 14px 40px -12px color-mix(in srgb, var(--accent) 55%, transparent);
+      }
+
+      .card .thumb {
+        aspect-ratio: 16 / 9;
+        width: 100%;
+        background: #0b0c18;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        position: relative;
+      }
+      .card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .card .thumb .placeholder {
+        font-size: 3rem;
+        font-weight: 900;
+        color: var(--accent);
+        text-shadow: 0 0 24px color-mix(in srgb, var(--accent) 60%, transparent);
+      }
+      .card .thumb::after {
+        content: "";
+        position: absolute; inset: 0;
+        background: linear-gradient(180deg, transparent 50%, color-mix(in srgb, var(--accent) 22%, transparent));
+        pointer-events: none;
+      }
+
+      .card .body { padding: 16px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+      .card .cat {
+        align-self: flex-start;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--accent);
+        background: color-mix(in srgb, var(--accent) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
+        padding: 3px 9px;
+        border-radius: 999px;
+      }
+      .card h3 { margin: 0; font-size: 1.15rem; }
+      .card p.desc { margin: 0; color: var(--muted); font-size: 0.9rem; line-height: 1.4; flex: 1; }
+
+      .card .btn {
+        margin-top: 6px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 11px 14px;
+        border-radius: 10px;
+        font-weight: 800;
+        color: #05060c;
+        background: linear-gradient(90deg, var(--accent), var(--gold));
+        box-shadow: 0 8px 24px -10px color-mix(in srgb, var(--accent) 70%, transparent);
+        transition: filter 0.15s ease, transform 0.15s ease;
+      }
+      .card .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+
+      .empty {
+        text-align: center;
+        color: var(--muted);
+        padding: 80px 20px;
+        font-size: 1.1rem;
+      }
+
+      .footer {
+        border-top: 1px solid var(--border);
+        padding: 22px 0;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+    </style>
+  </body>
+</html>
