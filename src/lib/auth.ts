@@ -79,3 +79,17 @@ export function clearSessionCookies(cookies: AstroCookies) {
   cookies.delete(ACCESS_COOKIE, { path: '/' });
   cookies.delete(REFRESH_COOKIE, { path: '/' });
 }
+
+/**
+ * Monta os cabeçalhos Set-Cookie explicitamente. Necessário porque o
+ * Astro nem sempre aplica `Astro.cookies.set` quando a API retorna um
+ * `Response` manual — e o cookie não era gravado de fato.
+ */
+export function buildSessionCookieHeaders(accessToken: string, refreshToken: string): string[] {
+  const maxAge = 60 * 60 * 24 * 7;
+  const opt = 'Path=/; HttpOnly; Secure; SameSite=Lax';
+  return [
+    `${ACCESS_COOKIE}=${accessToken}; ${opt}; Max-Age=${maxAge}`,
+    `${REFRESH_COOKIE}=${refreshToken}; ${opt}; Max-Age=${maxAge}`,
+  ];
+}

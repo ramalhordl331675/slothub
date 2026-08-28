@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { getAnonClient } from '../../lib/supabase';
-import { setSessionCookies } from '../../lib/auth';
+import { setSessionCookies, buildSessionCookieHeaders } from '../../lib/auth';
 
 export const prerender = false;
 
@@ -43,5 +43,10 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
   setSessionCookies(cookies, data.session.access_token, data.session.refresh_token);
 
-  return redirectTo('/admin');
+  const headers = new Headers();
+  headers.set('location', '/admin');
+  for (const c of buildSessionCookieHeaders(data.session.access_token, data.session.refresh_token)) {
+    headers.append('set-cookie', c);
+  }
+  return new Response(null, { status: 302, headers });
 };

@@ -1,9 +1,11 @@
 import type { APIRoute } from 'astro';
-import { clearSessionCookies } from '../../lib/auth';
+import { ACCESS_COOKIE, REFRESH_COOKIE } from '../../lib/auth';
 
-export const POST: APIRoute = async ({ cookies }) => {
-  clearSessionCookies(cookies);
-  return new Response(JSON.stringify({ ok: true }), {
-    headers: { 'content-type': 'application/json' },
-  });
+export const POST: APIRoute = async () => {
+  const headers = new Headers();
+  headers.set('content-type', 'application/json');
+  for (const name of [ACCESS_COOKIE, REFRESH_COOKIE]) {
+    headers.append('set-cookie', `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`);
+  }
+  return new Response(JSON.stringify({ ok: true }), { headers });
 };
