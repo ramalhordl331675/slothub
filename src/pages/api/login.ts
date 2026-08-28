@@ -1,52 +1,46 @@
 import type { APIRoute } from 'astro';
 import { getAnonClient } from '../../lib/supabase';
-import { setSessionCookies, buildSessionCookieHeaders } from '../../lib/auth';
+import { buildSessionCookieHeaders } from '../../lib/auth';
 
 export const prerender = false;
 
-function redirectTo(location: string): Response {
-  return new Response(null, {
-    status: 302,
-    headers: { location },
-  });
-}
-
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request }) => {
   let email: string | undefined;
   let password: string | undefined;
 
-  const contentType = request.headers.get('content-type') || '';
   try {
-    if (contentType.includes('application/json')) {
-      const body = await request.json();
-      email = body.email;
-      password = body.password;
-    } else {
-      const fd = await request.formData();
-      email = fd.get('email')?.toString();
-      password = fd.get('password')?.toString();
-    }
+    const body = await request.json();
+    email = body.email;
+    password = body.password;
   } catch {
-    return redirectTo('/admin?error=1');
+    return new Response(JSON.stringify({ error: 'Requisição inválida.' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 
   if (!email || !password) {
-    return redirectTo('/admin?error=1');
+    return new Response(JSON.stringify({ error: 'E-mail e senha são obrigatórios.' }), {
+      status: 400,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 
   const supabase = getAnonClient();
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
   if (error || !data.session) {
-    return redirectTo('/admin?error=1');
+    return new Response(JSON.stringify({ error: error?.message || 'Falha no login.' }), {
+      status: 401,
+      headers: { 'content-type': 'application/json' },
+    });
   }
 
-  setSessionCookies(cookies, data.session.access_token, data.session.refresh_token);
-
   const headers = new Headers();
-  headers.set('location', '/admin');
+  headers.set('content-type', 'application/json');
   for (const c of buildSessionCookieHeaders(data.session.access_token, data.session.refresh_token)) {
     headers.append('set-cookie', c);
   }
-  return new Response(null, { status: 302, headers });
+
+  return new Response(JSON.stringify({ ok: true, user: data.user }), { headers });
 };
