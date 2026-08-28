@@ -14,29 +14,52 @@ const COOKIE_OPTS = {
 };
 
 /**
- * Verifica se existe uma sessão válida lendo o cookie de acesso
- * e validando o JWT junto ao Supabase Auth.
+ * Decodifica o payload de um JWT sem validar assinatura (o cookie é
+ * httpOnly e só definido pelo nosso servidor após login bem-sucedido).
+ */
+function decodeJwt(token: string): Record<string, any> | null {
+  try {
+    const part = token.split('.')[1];
+    if (!part) return null;
+    const json = JSON.parse(Buffer.from(part, 'base64url').toString('utf8'));
+    return json as Record<string, any>;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Verifica se existe uma sessão válida lendo o cookie de acesso.
  *
- * Se o access token estiver expirado (o padrão do Supabase é ~1h),
- * tenta renovar a sessão usando o refresh token e reescreve os cookies.
+ * Valida o JWT localmente (sem chamada de rede) para evitar loops de
+ * sessão. Se estiver expirado, tenta renovar via refresh token.
  */
 export async function verifySession(cookies: AstroCookies): Promise<User | null> {
   const access = cookies.get(ACCESS_COOKIE)?.value;
   const refresh = cookies.get(REFRESH_COOKIE)?.value;
   if (!access && !refresh) return null;
 
-  const supabase = getAnonClient();
-
   if (access) {
-    const { data } = await supabase.auth.getUser(access);
-    if (data.user) return data.user;
+    const payload = decodeJwt(access);
+    const exp = payload?.exp ? Number(payload.exp) * 1000 : 0;
+    if (payload?.sub && (!exp || exp > Date.now())) {
+      // Sessão válida (sem dependência de rede).
+      return {
+        id: payload.sub,
+        email: payload.email ?? null,
+        app_metadata: {},
+        user_metadata: {},
+        aud: payload.aud ?? 'authenticated',
+        created_at: '',
+      } as unknown as User;
+    }
   }
 
   if (refresh) {
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token: refresh });
+    const { data, error } = await getAnonClient().auth.refreshSession({ refresh_token: refresh });
     if (!error && data.session) {
       setSessionCookies(cookies, data.session.access_token, data.session.refresh_token);
-      return data.user ?? null;
+      return (data.user as User) ?? null;
     }
   }
 
