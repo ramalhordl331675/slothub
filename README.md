@@ -89,3 +89,12 @@ npm run dev
 - O cookie de sessão é `httpOnly` + `secure` + `sameSite=lax`.
 - A chave `service_role` nunca vai para o navegador.
 - Recomenda-se ativar MFA e usar apenas usuários confiáveis no Supabase Auth.
+
+## 9. CI/CD (GitHub Actions)
+- `.github/workflows/ci.yml` — valida o build em PRs/pushes.
+- `.github/workflows/deploy.yml` — faz deploy em produção na Vercel (só roda se os segredos existirem).
+- `vercel.json` — headers de segurança + cache de assets (aditivo, não conflita com o adapter).
+
+Para o deploy automático, adicione estes **Secrets** no repo GitHub:
+`VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (ver em Vercel → Settings → Tokens / Project).
+As env vars do Supabase (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) continuam configuradas no painel da Vercel, não no GitHub.
