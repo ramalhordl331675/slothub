@@ -132,228 +132,174 @@ if (user) {
     }
   </div>
 
-  {
-    !user && (
-      <script>
-        const form = document.getElementById('login-form') as HTMLFormElement;
-        const errEl = document.getElementById('login-error') as HTMLElement;
-
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          errEl.hidden = true;
-          const btn = form.querySelector('button') as HTMLButtonElement;
-          btn.disabled = true;
-          btn.textContent = 'Entrando...';
-
-          const fd = new FormData(form);
-          let res: Response;
-          try {
-            res = await fetch('/api/login', {
-              method: 'POST',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({
-                email: fd.get('email'),
-                password: fd.get('password'),
-              }),
-            });
-          } catch {
-            errEl.textContent = 'Erro de conexão. Tente novamente.';
-            errEl.hidden = false;
-            btn.disabled = false;
-            btn.textContent = 'Entrar';
-            return;
-          }
-
-          let data: any = {};
-          try {
-            data = await res.json();
-          } catch {
-            data = {};
-          }
-
-          if (!res.ok) {
-            errEl.textContent = data.error || 'Falha no login.';
-            errEl.hidden = false;
-            btn.disabled = false;
-            btn.textContent = 'Entrar';
-            return;
-          }
-
-          window.location.href = '/admin';
-        });
-      </script>
-    )
-  }
-
-  {
-    user && (
-      <script>
-        const form = document.getElementById('link-form') as HTMLFormElement;
-        const listEl = document.getElementById('links-list') as HTMLElement;
-        const countEl = document.getElementById('count') as HTMLElement;
-        const formTitle = document.getElementById('form-title') as HTMLElement;
-        const saveBtn = document.getElementById('save-btn') as HTMLButtonElement;
-        const cancelBtn = document.getElementById('cancel-edit') as HTMLButtonElement;
-        const formMsg = document.getElementById('form-msg') as HTMLElement;
-        let editingId: string | null = null;
-
-        function unauthorized(res: Response) {
-          if (res.status === 401) {
-            window.location.href = '/admin';
-            return true;
-          }
-          return false;
-        }
-
-        function showMsg(text: string, isError = true) {
-          formMsg.textContent = text;
-          formMsg.hidden = false;
-          formMsg.style.color = isError ? 'var(--danger)' : 'var(--accent)';
-        }
-
-        function resetForm() {
-          editingId = null;
-          form.reset();
-          (document.getElementById('f-cor') as HTMLInputElement).value = '#00ff88';
-          (document.getElementById('f-ordem') as HTMLInputElement).value = '0';
-          (document.getElementById('f-ativo') as HTMLInputElement).checked = true;
-          formTitle.textContent = '➕ Adicionar link';
-          saveBtn.textContent = 'Salvar link';
-          cancelBtn.hidden = true;
-        }
-
-        async function loadLinks() {
-          const res = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
-          if (unauthorized(res)) return;
-          if (!res.ok) return;
-          const links = await res.json();
-          countEl.textContent = String(links.length);
-          renderList(links);
-        }
-
-        function esc(s: string) {
-          return String(s ?? '').replace(/[&<>"']/g, (c) => (
-            { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] as string
-          ));
-        }
-
-        function renderList(links: any[]) {
-          if (!links.length) {
-            listEl.innerHTML = '<p class="empty-list">Nenhum link ainda. Adicione o primeiro acima! 🚀</p>';
-            return;
-          }
-          listEl.innerHTML = links.map((l) => `
-            <div class="link-row" data-id="${l.id}" data-ativo="${l.ativo}">
-              <div class="thumb-sm" style="--accent:${esc(l.cor_destaque || '#00ff88')}">
-                ${l.imagem_url ? `<img src="${esc(l.imagem_url)}" alt="" />` : `<span>${esc((l.nome_plataforma || '?').charAt(0))}</span>`}
-              </div>
-              <div class="info">
-                <strong>${esc(l.nome_plataforma)}</strong>
-                <small>${esc(l.categoria || 'Sem categoria')}</small>
-              </div>
-              <span class="status ${l.ativo ? 'on' : 'off'}">${l.ativo ? 'Ativo' : 'Inativo'}</span>
-              <div class="row-actions">
-                <button class="btn-edit" data-id="${l.id}">Editar</button>
-                <button class="btn-toggle" data-id="${l.id}">${l.ativo ? 'Desativar' : 'Ativar'}</button>
-                <button class="btn-del" data-id="${l.id}">Excluir</button>
-              </div>
-            </div>
-          `).join('');
-        }
-
-        form.addEventListener('submit', async (e) => {
-          e.preventDefault();
-          const fd = new FormData(form);
-          const payload = {
-            nome_plataforma: fd.get('nome_plataforma'),
-            link_afiliado: fd.get('link_afiliado'),
-            imagem_url: fd.get('imagem_url') || null,
-            descricao: fd.get('descricao') || null,
-            categoria: fd.get('categoria') || null,
-            cor_destaque: fd.get('cor_destaque'),
-            ordem: Number(fd.get('ordem')) || 0,
-            ativo: (document.getElementById('f-ativo') as HTMLInputElement).checked,
-          };
-
-          const url = editingId ? `/api/links/${editingId}` : '/api/links';
-          const method = editingId ? 'PUT' : 'POST';
-          const res = await fetch(url, {
-            method,
+  <script>
+    // ===== LOGIN =====
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      const errEl = document.getElementById('login-error');
+      const btn = loginForm.querySelector('button');
+      loginForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (errEl) errEl.hidden = true;
+        btn.disabled = true;
+        btn.textContent = 'Entrando...';
+        const fd = new FormData(loginForm);
+        let res;
+        try {
+          res = await fetch('/api/login', {
+            method: 'POST',
             headers: { 'content-type': 'application/json' },
-            body: JSON.stringify(payload),
+            body: JSON.stringify({ email: fd.get('email'), password: fd.get('password') }),
           });
-          if (unauthorized(res)) return;
-          const data = await res.json();
-          if (!res.ok) {
-            showMsg(data.error || 'Erro ao salvar.');
-            return;
-          }
-          showMsg(editingId ? 'Link atualizado!' : 'Link criado!', false);
-          resetForm();
-          await loadLinks();
-        });
+        } catch {
+          if (errEl) { errEl.textContent = 'Erro de conexão. Tente novamente.'; errEl.hidden = false; }
+          btn.disabled = false; btn.textContent = 'Entrar';
+          return;
+        }
+        let data = {};
+        try { data = await res.json(); } catch {}
+        if (!res.ok) {
+          if (errEl) { errEl.textContent = (data && data.error) || 'Falha no login.'; errEl.hidden = false; }
+          btn.disabled = false; btn.textContent = 'Entrar';
+          return;
+        }
+        window.location.href = '/admin';
+      });
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('error') === '1' && errEl) {
+        errEl.textContent = 'E-mail ou senha inválidos.';
+        errEl.hidden = false;
+      }
+    }
 
-        cancelBtn.addEventListener('click', resetForm);
+    // ===== DASHBOARD =====
+    const dashForm = document.getElementById('link-form');
+    if (dashForm) {
+      const listEl = document.getElementById('links-list');
+      const countEl = document.getElementById('count');
+      const formTitle = document.getElementById('form-title');
+      const saveBtn = document.getElementById('save-btn');
+      const cancelBtn = document.getElementById('cancel-edit');
+      const formMsg = document.getElementById('form-msg');
+      let editingId = null;
 
-        listEl.addEventListener('click', async (e) => {
-          const t = e.target as HTMLElement;
-          const id = t.getAttribute('data-id');
-          if (!id) return;
-
-          if (t.classList.contains('btn-del')) {
-            if (!confirm('Excluir este link permanentemente?')) return;
-            const res = await fetch(`/api/links/${id}`, { method: 'DELETE' });
-            if (unauthorized(res)) return;
-            if (res.ok) await loadLinks();
-            else showMsg('Erro ao excluir.');
-          }
-
-          if (t.classList.contains('btn-toggle')) {
-            const row = t.closest('.link-row') as HTMLElement;
-            const ativoAtual = row.getAttribute('data-ativo') === 'true';
-            const res = await fetch(`/api/links/${id}`, {
-              method: 'PUT',
-              headers: { 'content-type': 'application/json' },
-              body: JSON.stringify({ ativo: !ativoAtual }),
-            });
-            if (unauthorized(res)) return;
-            if (res.ok) await loadLinks();
-            else showMsg('Erro ao alterar status.');
-          }
-
-          if (t.classList.contains('btn-edit')) {
-            const res = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
-            if (unauthorized(res)) return;
-            if (!res.ok) return;
-            const links = await res.json();
-            const l = links.find((x: any) => x.id === id);
-            if (!l) return;
-
-            editingId = id;
-            (document.getElementById('f-id') as HTMLInputElement).value = l.id;
-            (document.getElementById('f-nome') as HTMLInputElement).value = l.nome_plataforma;
-            (document.getElementById('f-link') as HTMLInputElement).value = l.link_afiliado;
-            (document.getElementById('f-img') as HTMLInputElement).value = l.imagem_url || '';
-            (document.getElementById('f-cat') as HTMLInputElement).value = l.categoria || '';
-            (document.getElementById('f-desc') as HTMLInputElement).value = l.descricao || '';
-            (document.getElementById('f-cor') as HTMLInputElement).value = l.cor_destaque || '#00ff88';
-            (document.getElementById('f-ordem') as HTMLInputElement).value = l.ordem ?? 0;
-            (document.getElementById('f-ativo') as HTMLInputElement).checked = !!l.ativo;
-
-            formTitle.textContent = `✏️ Editando: ${l.nome_plataforma}`;
-            saveBtn.textContent = 'Atualizar link';
-            cancelBtn.hidden = false;
-            form.scrollIntoView({ behavior: 'smooth' });
-          }
-        });
-
-        document.getElementById('logout-btn')?.addEventListener('click', async () => {
-          await fetch('/api/logout', { method: 'POST' });
-          window.location.href = '/admin';
-        });
-      </script>
-    )
-  }
+      function unauthorized(r) {
+        if (r.status === 401) { window.location.href = '/admin'; return true; }
+        return false;
+      }
+      function showMsg(text, isError = true) {
+        formMsg.textContent = text; formMsg.hidden = false;
+        formMsg.style.color = isError ? 'var(--danger)' : 'var(--accent)';
+      }
+      function resetForm() {
+        editingId = null; dashForm.reset();
+        document.getElementById('f-cor').value = '#00ff88';
+        document.getElementById('f-ordem').value = '0';
+        document.getElementById('f-ativo').checked = true;
+        formTitle.textContent = '➕ Adicionar link';
+        saveBtn.textContent = 'Salvar link';
+        cancelBtn.hidden = true;
+      }
+      async function loadLinks() {
+        const r = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
+        if (unauthorized(r)) return;
+        if (!r.ok) return;
+        const links = await r.json();
+        countEl.textContent = String(links.length);
+        renderList(links);
+      }
+      function esc(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+      }
+      function renderList(links) {
+        if (!links.length) { listEl.innerHTML = '<p class="empty-list">Nenhum link ainda. Adicione o primeiro acima! 🚀</p>'; return; }
+        listEl.innerHTML = links.map((l) => `
+          <div class="link-row" data-id="${l.id}" data-ativo="${l.ativo}">
+            <div class="thumb-sm" style="--accent:${esc(l.cor_destaque || '#00ff88')}">
+              ${l.imagem_url ? `<img src="${esc(l.imagem_url)}" alt="" />` : `<span>${esc((l.nome_plataforma || '?').charAt(0))}</span>`}
+            </div>
+            <div class="info">
+              <strong>${esc(l.nome_plataforma)}</strong>
+              <small>${esc(l.categoria || 'Sem categoria')}</small>
+            </div>
+            <span class="status ${l.ativo ? 'on' : 'off'}">${l.ativo ? 'Ativo' : 'Inativo'}</span>
+            <div class="row-actions">
+              <button class="btn-edit" data-id="${l.id}">Editar</button>
+              <button class="btn-toggle" data-id="${l.id}">${l.ativo ? 'Desativar' : 'Ativar'}</button>
+              <button class="btn-del" data-id="${l.id}">Excluir</button>
+            </div>
+          </div>`).join('');
+      }
+      dashForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(dashForm);
+        const payload = {
+          nome_plataforma: fd.get('nome_plataforma'),
+          link_afiliado: fd.get('link_afiliado'),
+          imagem_url: fd.get('imagem_url') || null,
+          descricao: fd.get('descricao') || null,
+          categoria: fd.get('categoria') || null,
+          cor_destaque: fd.get('cor_destaque'),
+          ordem: Number(fd.get('ordem')) || 0,
+          ativo: document.getElementById('f-ativo').checked,
+        };
+        const url = editingId ? `/api/links/${editingId}` : '/api/links';
+        const method = editingId ? 'PUT' : 'POST';
+        const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+        if (unauthorized(r)) return;
+        const d = await r.json();
+        if (!r.ok) { showMsg(d.error || 'Erro ao salvar.'); return; }
+        showMsg(editingId ? 'Link atualizado!' : 'Link criado!', false);
+        resetForm();
+        await loadLinks();
+      });
+      cancelBtn.addEventListener('click', resetForm);
+      listEl.addEventListener('click', async (e) => {
+        const t = e.target;
+        const id = t.getAttribute('data-id');
+        if (!id) return;
+        if (t.classList.contains('btn-del')) {
+          if (!confirm('Excluir este link permanentemente?')) return;
+          const r = await fetch(`/api/links/${id}`, { method: 'DELETE' });
+          if (unauthorized(r)) return;
+          if (r.ok) await loadLinks(); else showMsg('Erro ao excluir.');
+        }
+        if (t.classList.contains('btn-toggle')) {
+          const row = t.closest('.link-row');
+          const ativoAtual = row.getAttribute('data-ativo') === 'true';
+          const r = await fetch(`/api/links/${id}`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ ativo: !ativoAtual }) });
+          if (unauthorized(r)) return;
+          if (r.ok) await loadLinks(); else showMsg('Erro ao alterar status.');
+        }
+        if (t.classList.contains('btn-edit')) {
+          const r = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
+          if (unauthorized(r)) return;
+          if (!r.ok) return;
+          const links = await r.json();
+          const l = links.find((x) => x.id === id);
+          if (!l) return;
+          editingId = id;
+          document.getElementById('f-id').value = l.id;
+          document.getElementById('f-nome').value = l.nome_plataforma;
+          document.getElementById('f-link').value = l.link_afiliado;
+          document.getElementById('f-img').value = l.imagem_url || '';
+          document.getElementById('f-cat').value = l.categoria || '';
+          document.getElementById('f-desc').value = l.descricao || '';
+          document.getElementById('f-cor').value = l.cor_destaque || '#00ff88';
+          document.getElementById('f-ordem').value = l.ordem ?? 0;
+          document.getElementById('f-ativo').checked = !!l.ativo;
+          formTitle.textContent = `✏️ Editando: ${l.nome_plataforma}`;
+          saveBtn.textContent = 'Atualizar link';
+          cancelBtn.hidden = false;
+          dashForm.scrollIntoView({ behavior: 'smooth' });
+        }
+      });
+      document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        await fetch('/api/logout', { method: 'POST' });
+        window.location.href = '/admin';
+      });
+    }
+  </script>
 </Layout>
 
 <style>
