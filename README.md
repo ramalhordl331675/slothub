@@ -98,3 +98,5 @@ npm run dev
 Para o deploy automático, adicione estes **Secrets** no repo GitHub:
 `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` (ver em Vercel → Settings → Tokens / Project).
 As env vars do Supabase (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) continuam configuradas no painel da Vercel, não no GitHub.
+
+<!-- deploy trigger -->
