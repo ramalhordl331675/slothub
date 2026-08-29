@@ -11,7 +11,8 @@ interface Props {
   };
 }
 const { link } = Astro.props;
-const cor = link.cor_destaque || '#00ff88';
+const corValida = typeof link.cor_destaque === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(link.cor_destaque);
+const cor = corValida ? link.cor_destaque : '#00ff88';
 const inicial = (link.nome_plataforma || '?').charAt(0).toUpperCase();
 ---
 

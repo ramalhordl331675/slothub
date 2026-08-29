@@ -201,12 +201,16 @@ if (user) {
         cancelBtn.hidden = true;
       }
       async function loadLinks() {
-        const r = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
-        if (unauthorized(r)) return;
-        if (!r.ok) return;
-        const links = await r.json();
-        countEl.textContent = String(links.length);
-        renderList(links);
+        try {
+          const r = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
+          if (unauthorized(r)) return;
+          if (!r.ok) { showMsg('Erro ao carregar links.'); return; }
+          const links = await r.json();
+          countEl.textContent = String(links.length);
+          renderList(links);
+        } catch {
+          showMsg('Erro de conexão ao carregar links.');
+        }
       }
       function esc(s) {
         return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
@@ -232,6 +236,7 @@ if (user) {
       }
       dashForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        saveBtn.disabled = true;
         const fd = new FormData(dashForm);
         const payload = {
           nome_plataforma: fd.get('nome_plataforma'),
@@ -245,13 +250,19 @@ if (user) {
         };
         const url = editingId ? `/api/links/${editingId}` : '/api/links';
         const method = editingId ? 'PUT' : 'POST';
-        const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
-        if (unauthorized(r)) return;
-        const d = await r.json();
-        if (!r.ok) { showMsg(d.error || 'Erro ao salvar.'); return; }
-        showMsg(editingId ? 'Link atualizado!' : 'Link criado!', false);
-        resetForm();
-        await loadLinks();
+        try {
+          const r = await fetch(url, { method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) });
+          if (unauthorized(r)) return;
+          const d = await r.json().catch(() => ({}));
+          if (!r.ok) { showMsg(d.error || 'Erro ao salvar.'); return; }
+          showMsg(editingId ? 'Link atualizado!' : 'Link criado!', false);
+          resetForm();
+          await loadLinks();
+        } catch {
+          showMsg('Erro de conexão ao salvar.');
+        } finally {
+          saveBtn.disabled = false;
+        }
       });
       cancelBtn.addEventListener('click', resetForm);
       listEl.addEventListener('click', async (e) => {
@@ -275,8 +286,8 @@ if (user) {
           const r = await fetch('/api/links', { headers: { 'content-type': 'application/json' } });
           if (unauthorized(r)) return;
           if (!r.ok) return;
-          const links = await r.json();
-          const l = links.find((x) => x.id === id);
+          const links = await r.json().catch(() => []);
+          const l = links.find((x) => String(x.id) === String(id));
           if (!l) return;
           editingId = id;
           document.getElementById('f-id').value = l.id;
@@ -298,6 +309,8 @@ if (user) {
         await fetch('/api/logout', { method: 'POST' });
         window.location.href = '/admin';
       });
+
+      loadLinks();
     }
   </script>
 </Layout>
