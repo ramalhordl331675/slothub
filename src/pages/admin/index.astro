@@ -264,8 +264,8 @@ if (user) {
           saveBtn.disabled = false;
         }
       });
-      cancelBtn.addEventListener('click', resetForm);
-      listEl.addEventListener('click', async (e) => {
+      cancelBtn?.addEventListener('click', resetForm);
+      listEl?.addEventListener('click', async (e) => {
         const t = e.target;
         const id = t.getAttribute('data-id');
         if (!id) return;
